@@ -1,0 +1,17 @@
+{
+  "name": "memorang",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "openai": "^6.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3"
+  }
+}
