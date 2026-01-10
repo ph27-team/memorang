@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Memorang Skills</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- ChatKit Web -->
+    <script src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #f9fafb;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 20px;
+      }
+      
+      openai-chatkit {
+        display: block;
+        height: 600px;
+        width: 400px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        background: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Quiz Chat</h1>
+    <!-- The ChatKit component is a web component -->
+    <openai-chatkit id="my-chat"></openai-chatkit>
+    
+    <script async>
+      const chatkit = document.getElementById('my-chat');
+
+      chatkit.setOptions({
+        api: {
+          async getClientSecret(currentClientSecret) {
+            if (!currentClientSecret) {
+              const res = await fetch('/api/chatkit/session', { method: 'POST' })
+              const {client_secret} = await res.json();
+              
+              
+              return client_secret
+            }
+            const res = await fetch('/api/chatkit/refresh', {
+              method: 'POST',
+              body: JSON.stringify({ currentClientSecret }),
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            const {client_secret} = await res.json();
+            return client_secret
+          }
+        },
+        startScreen: {
+          greeting: "Upload a PDF (up to 5MB) and let's test your knowledge with a quiz!",
+        },
+        composer: {
+          attachments: {
+            enabled: true,
+            accept: { "application/pdf": [".pdf"] },
+            maxCount: 1,
+            maxSize: 5*1024*1024, // 5MB
+          },
+        },
+      })
+      
+    </script>
+  </body>
+</html>
