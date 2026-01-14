@@ -1,25 +1,35 @@
 import express from 'express'
 import OpenAI from 'openai'
 import dotenv from 'dotenv'
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'path'
+import multer from 'multer'
+import { fileURLToPath } from 'url'
 
-import { chatHandler } from './chatkit.js';
+import { chatHandler, fileUploadHandler } from './chatkit.js'
 
 dotenv.config()
-const { OPENAI_API_KEY, ORG_ID, WORKFLOW_ID } = process.env;
+const { OPENAI_API_KEY, ORG_ID, WORKFLOW_ID } = process.env
 
-const app = express();
-const port = 3000;
 
-app.use(express.json())
+const app = express()
+const port = 3000
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+app.use(express.json({ limit: '5mb' }))
+app.use(express.urlencoded({ limit: '5mb', extended: true }))
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-app.use(express.static(path.join(__dirname, '../public')));
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
+
+app.use(express.static(path.join(__dirname, '../public')))
+
+const upload = multer({ storage: multer.memoryStorage() })
+
+// New endpoint for 'direct' upload strategy
+app.post('/api/chatkit/upload', upload.single('file'), async (req, res) => {
+  fileUploadHandler(openai)(req, res)
+})
 
 // Endpoint to create a ChatKit session and return a client secret
 app.post('/api/chatkit/session', async (req, res) => {
@@ -34,29 +44,17 @@ app.post('/api/chatkit/session', async (req, res) => {
           max_file_size: 5, // 5MB
         },
       },
-    });
-    res.json({ client_secret: session.client_secret });
-  } catch (error) {
-    console.error('Error creating ChatKit session:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
+    })
 
-app.post('/api/chatkit/refresh', async (req, res) => {
-  const { currentClientSecret } = req.body;
-  try {
-    const session = await openai.beta.chatkit.sessions.refresh({
-      client_secret: currentClientSecret,
-    });
-    res.json({ client_secret: session.client_secret });
+    res.json({ client_secret: session.client_secret })
   } catch (error) {
-    console.error('Error refreshing ChatKit session:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Error creating ChatKit session:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
   }
-});
+})
 
 app.post('/api/chat', chatHandler(openai))
 
 app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
-});
+  console.log(`Server listening at http://localhost:${port}`)
+})
