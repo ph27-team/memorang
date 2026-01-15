@@ -27,22 +27,27 @@ export const chatHandler = (client) => async (req, res) => {
         const convo = await createNewConvo(client, input)
 
         console.log('convo created', convo)
-        const aiResponse = await client.responses.create({
-          model: "gpt-4o",
-          store: true,
-          conversation: convo.id,
-          input: [
-            ...params.input.content.map(c => ({ role: "user", content: c.text }))
-          ]
-        });
+        // const aiResponse = await client.responses.create({
+        //   model: "gpt-4o",
+        //   store: true,
+        //   conversation: convo.id,
+        //   input: [
+        //     ...params.input.content.map(c => ({ role: "user", content: c.text }))
+        //   ]
+        // });
 
-        return res.json({
+        const result = {
           id: `cthr_${crypto.randomUUID().replace(/-/g, "").slice(0, 24)}`,
           object: "chatkit.thread",
           created_at: Math.floor(Date.now() / 1000),
           status: { type: "active" },
           title: null,
           user: ORG_ID || "memorang",
+        }
+
+        return res.json({
+          type: "threads.create",
+          result,
         })
       }
       case "threads.list": {
@@ -51,24 +56,31 @@ export const chatHandler = (client) => async (req, res) => {
           limit: 100
         })
 
-        return res.json({
-          object: "list",
-          has_more: false,
-          data: [],
-        })
-      }
-      case "threads.retrieve": {
-        const threads = await client.beta.chatkit.threads.list({ 
-          user: ORG_ID,
-          limit: 100
-        })
+        const result = threads.body
+        // {
+        //   object: "list",
+        //   has_more: false,
+        //   data: [],
+        // }
 
         return res.json({
-          id: params.thread_id,
-          object: "chatkit.thread",
-          status: { type: "active" },
+          type: "threads.list",
+          result,
         })
+
       }
+      // case "threads.retrieve": {
+      //   const threads = await client.beta.chatkit.threads.list({ 
+      //     user: ORG_ID,
+      //     limit: 100
+      //   })
+
+      //   return res.json({
+      //     id: params.thread_id,
+      //     object: "chatkit.thread",
+      //     status: { type: "active" },
+      //   })
+      // }
     }
   } catch (err) {
     console.error(`Error handling ${type}:`, err)
