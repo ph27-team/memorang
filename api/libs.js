@@ -33,46 +33,14 @@ export const createOrUpdateConvo = async (res, type, input, client_secret, threa
       },
       body: JSON.stringify(payload)
     })
-    const reader = result.body.getReader();
-const decoder = new TextDecoder();
-  let buffer = ""; // Holds partial chunks between reads
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    // 1. Decode current binary chunk and add to buffer
-    buffer += decoder.decode(value, { stream: true });
-
-    // 2. Split buffer by the SSE double-newline delimiter
-    const parts = buffer.split("\n\n");
     
-    // 3. Process all complete events (keep the last partial one in the buffer)
-    buffer = parts.pop(); 
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
 
-    for (const part of parts) {
-      if (part.startsWith("data: ")) {
-        const jsonString = part.replace("data: ", "").trim();
-        
-        // Handle OpenAI's specific [DONE] signal
-        if (jsonString === "[DONE]") return;
-
-        try {
-          const data = JSON.parse(jsonString);
-          console.log("New Event Data:", data);
-          // UI Update: Update your quiz component here
-        } catch (e) {
-          console.error("Error parsing SSE JSON:", e);
-        }
-      }
-    }
-  }
-    // res.status(result.status)
-    // res.setHeader("Cache-Control", "no-cache")
-    // res.setHeader("Connection", "keep-alive")
-    
-    // const nodeStream = Readable.fromWeb(result.body)
-    // nodeStream.pipe(res)
+    const nodeStream = Readable.fromWeb(result.body)
+    nodeStream.pipe(res)
   } catch (error) {
     console.error('Error creating thread:', error)
   }
@@ -117,9 +85,6 @@ export const fileUploadHandler = (client) => async (req, res) => {
       new Blob([req.file.buffer], { type: req.file.mimetype }),
       req.file.originalname
     );
-    formData.append("purpose", "assistants")
-
-    // const file = await toFile(req.file.buffer, req.file.originalname)
 
     const result = await fetch(`${baseUrl}files`, {
       method: "POST",
@@ -130,8 +95,6 @@ export const fileUploadHandler = (client) => async (req, res) => {
     })  
 
     const response = await result.json()
-    console.log('results', response)
-
     res.json(response)
   } catch (error) {
     console.error("Upload error:", error)
