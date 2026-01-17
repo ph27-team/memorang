@@ -1,7 +1,6 @@
-import { toFile } from 'openai'
 import dotenv from 'dotenv'
 
-import { createNewConvo, responseHandler } from './libs.js'
+import { createOrUpdateConvo, responseHandler } from './libs.js'
 
 dotenv.config()
 const { ORG_ID } = process.env
@@ -15,76 +14,29 @@ export const chatHandler = (client) => async (req, res) => {
   } = req.body
   console.log('log event', type, params)
 
-  let chatkitThread = null
-  let history = []
+  const client_secret = req.cookies.chat_id
 
-  // 1. Handle Structural Thread Events (Proxy these to OpenAI)
-  // This keeps your chat history and sessions alive
-  try {
-    switch (type) {
-      case "threads.create": {
-        const { inference_options, quoted_text, ...input } = params.input
-        const convo = await createNewConvo(client, input)
+  switch (type) {
+    case "threads.create": {
+      await createOrUpdateConvo(res, type, params.input, client_secret)
 
-        console.log('convo created', convo)
-        // const aiResponse = await client.responses.create({
-        //   model: "gpt-4o",
-        //   store: true,
-        //   conversation: convo.id,
-        //   input: [
-        //     ...params.input.content.map(c => ({ role: "user", content: c.text }))
-        //   ]
-        // });
-
-        const result = {
-          id: `cthr_${crypto.randomUUID().replace(/-/g, "").slice(0, 24)}`,
-          object: "chatkit.thread",
-          created_at: Math.floor(Date.now() / 1000),
-          status: { type: "active" },
-          title: null,
-          user: ORG_ID || "memorang",
-        }
-
-        return res.json({
-          type: "threads.create",
-          result,
-        })
-      }
-      case "threads.list": {
-        const threads = await client.beta.chatkit.threads.list({ 
-          user: ORG_ID,
-          limit: 100
-        })
-
-        const result = threads.body
-        // {
-        //   object: "list",
-        //   has_more: false,
-        //   data: [],
-        // }
-
-        return res.json({
-          type: "threads.list",
-          result,
-        })
-
-      }
-      // case "threads.retrieve": {
-      //   const threads = await client.beta.chatkit.threads.list({ 
-      //     user: ORG_ID,
-      //     limit: 100
-      //   })
-
-      //   return res.json({
-      //     id: params.thread_id,
-      //     object: "chatkit.thread",
-      //     status: { type: "active" },
-      //   })
-      // }
+      return
     }
-  } catch (err) {
-    console.error(`Error handling ${type}:`, err)
-    return res.status(500).json({ error: "Internal Server Error" })
+    case "threads.list": {
+      const threads = await client.beta.chatkit.threads.list({ 
+        user: ORG_ID,
+        limit: 100
+      })
+
+      const result = threads.body.data
+
+      return res.json(result)
+    }
+    case "threads.add_user_message": {
+      await createOrUpdateConvo(res, type, params.input, client_secret, params.thread_id)
+
+      return
+    }
   }
   
   // 2. Handle Chat Messages and Actions
@@ -165,32 +117,5 @@ export const chatHandler = (client) => async (req, res) => {
       }
     ]
     return responseHandler(client, {content, messages})(req, res)
-  }
-
-  return responseHandler(client, {messages})(req, res)
-}
-
-export const fileUploadHandler = (client) => async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).send('No file uploaded.')
-
-    // 1. Upload the file to OpenAI
-    const file = await client.files.create({
-      file: await toFile(req.file.buffer, req.file.originalname),
-      purpose: 'assistants',
-    })
-
-    // 2. Return the file_id. ChatKit will automatically 
-    // include this in the next message to your /api/chat handler.
-    res.json({ 
-      id: file.id,
-      file_id: file.id,
-      mime_type: req.file.mimetype,
-      name: req.file.originalname,
-      size: req.file.size,
-    })
-  } catch (error) {
-    console.error("Upload error:", error)
-    res.status(500).json({ error: "Failed to upload to OpenAI" })
   }
 }

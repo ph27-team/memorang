@@ -1,52 +1,47 @@
-const { OPENAI_API_KEY } = process.env
+import { Readable } from "stream"
+import { toFile } from 'openai'
+// import multer from "multer";
 
-export const createNewConvo = async (client, input) => {
+// const upload = multer();
+
+const baseUrl = 'https://api.openai.com/v1/chatkit/'
+
+export const createOrUpdateConvo = async (res, type, input, client_secret, threadId = null) => {
   try {
-    const { attachments, content } = input
-    const updatedAttachments = attachments.length > 0 
-      ? attachments.map(fileId => ({
-          file_id: fileId,
-        })) 
-      : []
-    const updatedContent = content.length > 0 
-      ? content.map(item => ({
-          type: "text",
-          text: item.type === "input_text" ? item.text : ''
-        })) 
-      : []
-
-    let message = {}
-
-    if (content.length > 0 ) {
-      message.type = content[0].type
-      message.text = content[0].text
+    const { attachments = [], content } = input
+    let payload = {
+      type,
+      params: {
+        input: {
+            content,
+            quoted_text: "",
+            attachments,
+            inference_options: {}
+        }
+      }
     }
 
-    if (attachments.length > 0) {
-      message.type = "input_file"
-      message.file_id = updatedAttachments[0].file_id
-    }
+    if (threadId) payload.params.thread_id = threadId
 
-    const conversation = await client.conversations.create({
-      items: [{
-        type: "message",
-        content: [message],
-        role: "user",
-      }]
+    const result = await fetch(`${baseUrl}conversation`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${client_secret}`,
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream",
+        "Accept-Encoding": "gzip, deflate, br, zstd"
+      },
+      body: JSON.stringify(payload)
     })
 
-    // console.log('Thread with Message Created:', conversation.id)
-    return conversation
+    res.status(result.status)
+    res.setHeader("Cache-Control", "no-cache")
+    res.setHeader("Connection", "keep-alive")
+    
+    const nodeStream = Readable.fromWeb(result.body)
+    nodeStream.pipe(res)
   } catch (error) {
     console.error('Error creating thread:', error)
-  }
-}
-
-export const updateThread = async (client, threadId, input) => {
-  try {
-    const { attachments, content } = input
-  } catch (error) {
-    console.error('Error updating thread:', error)
   }
 }
 
@@ -61,18 +56,52 @@ export const responseHandler = (client, { context = [] }) => async (req, res) =>
       ?? response.output?.[0]?.content?.[0]?.text 
       ?? ""
 
-    return res.json({
-      type: "messages.create",
-      result: {
-        object: "chatkit.thread_item",
-        type: "chatkit.assistant_message",
-        thread_id: req.body.params?.thread_id,
-        content: [
-          {
-            type: "output_text",
-            text: outputText,
-          },
-        ],
+  return res.json({
+    type: "messages.create",
+    result: {
+      object: "chatkit.thread_item",
+      type: "chatkit.assistant_message",
+      thread_id: req.body.params?.thread_id,
+      content: [
+        {
+          type: "output_text",
+          text: outputText,
+        },
+      ],
+    },
+  })
+}
+
+// https://api.openai.com/v1/chatkit/files
+export const fileUploadHandler = (client) => async (req, res) => {
+  const client_secret = req.cookies.chat_id
+  console.log('client_secret', client_secret)
+
+  try {
+    const formData = new FormData();
+    formData.append(
+      "file",
+      new Blob([req.file.buffer], { type: req.file.mimetype }),
+      req.file.originalname
+    );
+    // formData.append("purpose", "assistants")
+
+    // const file = await toFile(req.file.buffer, req.file.originalname)
+
+    const result = await fetch(`${baseUrl}files`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${client_secret}`,
       },
-    })
+      body: formData,
+    })  
+
+    const response = await result.json()
+    console.log('results', response)
+
+    res.json(response)
+  } catch (error) {
+    console.error("Upload error:", error)
+    res.status(500).json({ error: "Failed to upload to OpenAI" })
+  }
 }
