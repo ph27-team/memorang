@@ -1,15 +1,25 @@
 {
   "name": "memorang",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "api/index.js",
+  "type": "module",
   "scripts": {
-    "test": "test"
+    "test": "test",
+    "start": "node api/index.js"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "openai": "^6.15.0"
+    "@types/express": "^5.0.6",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "multer": "^2.0.2",
+    "openai": "^6.16.0",
+    "path": "^0.12.7",
+    "stream": "^0.0.3",
+    "url": "^0.11.4"
   },
   "devDependencies": {
     "@types/node": "^25.0.3"
