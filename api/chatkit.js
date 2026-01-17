@@ -18,9 +18,9 @@ export const chatHandler = (client) => async (req, res) => {
 
   switch (type) {
     case "threads.create": {
-      await createOrUpdateConvo(res, type, params.input, client_secret)
+      const convo = await createOrUpdateConvo(res, type, params.input, client_secret)
 
-      return
+      return convo
     }
     case "threads.list": {
       const threads = await client.beta.chatkit.threads.list({ 
