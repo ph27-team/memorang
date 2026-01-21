@@ -1,14 +1,11 @@
 import { Readable } from "stream"
-import { toFile } from 'openai'
-// import multer from "multer";
-
-// const upload = multer();
+import { nanoid } from "nanoid"
 
 const baseUrl = 'https://api.openai.com/v1/chatkit/'
 
 export const createOrUpdateConvo = async (res, type, input, client_secret, threadId = null) => {
   try {
-    const { attachments = [], content } = input
+    const { attachments = [], content = [{id: nanoid(), text: ''}] } = input
     let payload = {
       type,
       params: {
@@ -16,7 +13,11 @@ export const createOrUpdateConvo = async (res, type, input, client_secret, threa
             content,
             quoted_text: "",
             attachments,
-            inference_options: {}
+            inference_options: {},
+            // attachments: attachments.map(item => ({
+            //   id: item, // it's just an array of file id strings
+            //   type: 'file',
+            // })),
         }
       }
     }
@@ -82,7 +83,7 @@ export const fileUploadHandler = (client) => async (req, res) => {
     const formData = new FormData();
     formData.append(
       "file",
-      new Blob([req.file.buffer], { type: req.file.mimetype }),
+      new Blob([req.file.buffer], { id: nanoid(), type: req.file.mimetype }),
       req.file.originalname
     );
 

@@ -37,9 +37,16 @@ export const chatHandler = (client) => async (req, res) => {
 
       return
     }
+    case "threads.custom_action": {
+      handleCustomActions()
+      // action = {type: 'quiz.submit', payload: {…}}
+      // item_id = 'cti_696b33be85548194818f4909ad6de5e209e91027a98ee861'
+      // thread_id = 'cthr_696b33a7eb0c81949a30f753d919adf309e91027a98ee861'
+    }
   }
-  
-  // 2. Handle Chat Messages and Actions
+}
+
+const handleCustomActions = (action) => {
   if (action) {
     const { type, payload } = action
 
@@ -59,7 +66,6 @@ export const chatHandler = (client) => async (req, res) => {
 
     const currentQuestionIndex = quiz_state.current_question_index
     const question = quiz_state.questions[currentQuestionIndex]
-
 
     switch (type) {
       case "quiz.submit": {
