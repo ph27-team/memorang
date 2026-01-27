@@ -10,14 +10,10 @@ export const createOrUpdateConvo = async (res, type, input, client_secret, threa
       type,
       params: {
         input: {
-            content,
-            quoted_text: "",
-            attachments,
-            inference_options: {},
-            // attachments: attachments.map(item => ({
-            //   id: item, // it's just an array of file id strings
-            //   type: 'file',
-            // })),
+          content,
+          quoted_text: "",
+          attachments,
+          inference_options: {},
         }
       }
     }
@@ -100,5 +96,20 @@ export const fileUploadHandler = (client) => async (req, res) => {
   } catch (error) {
     console.error("Upload error:", error)
     res.status(500).json({ error: "Failed to upload to OpenAI" })
+  }
+}
+
+export const stateReducer = (prevState = defaultState, nextState = {}) => {
+/** State object for widget */
+//   current_question_index: z.number().default(0),
+//   total: z.number(),
+//   show_feedback: z.boolean().default(false),
+//   is_correct: z.boolean().default(false),
+//   completed: z.boolean().default(false),
+//   current_retry_count: z.number().default(0),
+
+  return {
+    ...prevState,
+    ...nextState,
   }
 }

@@ -1,24 +1,31 @@
 import dotenv from 'dotenv'
+import { Readable } from "stream"
+import { customAlphabet } from 'nanoid';
+import { hexadecimalLowercase } from 'nanoid-dictionary';
 
-import { createOrUpdateConvo, responseHandler } from './libs.js'
+import { createOrUpdateConvo, responseHandler, stateReducer } from './libs.js'
 
 dotenv.config()
 const { ORG_ID } = process.env
 
 export const chatHandler = (client) => async (req, res) => {
   const { 
-    action, 
-    messages = [], 
     params, 
     type,
   } = req.body
-  console.log('log event', type, params)
-
+  const { 
+    action, 
+    input, 
+    item_id,
+    thread_id,
+  } = params
+  console.log('log event', req.body)
+  console.log('client', client)
   const client_secret = req.cookies.chat_id
 
   switch (type) {
     case "threads.create": {
-      const convo = await createOrUpdateConvo(res, type, params.input, client_secret)
+      const convo = await createOrUpdateConvo(res, type, input, client_secret)
 
       return convo
     }
@@ -29,99 +36,125 @@ export const chatHandler = (client) => async (req, res) => {
       })
 
       const result = threads.body.data
-
       return res.json(result)
     }
     case "threads.add_user_message": {
-      await createOrUpdateConvo(res, type, params.input, client_secret, params.thread_id)
+      await createOrUpdateConvo(res, type, input, client_secret, params.thread_id)
 
       return
     }
     case "threads.custom_action": {
-      handleCustomActions()
-      // action = {type: 'quiz.submit', payload: {…}}
-      // item_id = 'cti_696b33be85548194818f4909ad6de5e209e91027a98ee861'
-      // thread_id = 'cthr_696b33a7eb0c81949a30f753d919adf309e91027a98ee861'
+      const result = handleCustomActions(action)
+      const newId = () => {
+        const id = `cti_${customAlphabet(hexadecimalLowercase, 48)()}`
+        return id
+      }
+
+      const payload = {
+        type: "thread.item.done",
+        item: {
+          created_at: new Date().toISOString(),
+          id: newId(),
+          object: "chatkit.thread_item",
+          type: "chatkit.widget",
+          thread_id,
+          widget: {
+            name: "Quiz_Widget",
+            props: {
+              ...result
+            }
+          }
+        }
+      }
+      // const payload = {
+      //   type: "thread.item.done",
+      //   item: {
+      //     created_at: new Date().toISOString(),
+      //     id: newId(),
+      //     type: "widget",
+      //     thread_id,
+      //     widget: {
+      //       name: "Quiz_Widget",
+      //       props: {
+      //         ...result
+      //       }
+      //     }
+      //   }
+      // }
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      res.write(`data: ${JSON.stringify(payload)}\n\n`)
+
+      res.write("data: [DONE]\n\n")
+      res.end()
     }
   }
 }
 
 const handleCustomActions = (action) => {
   if (action) {
-    const { type, payload } = action
+    const { 
+      type, 
+      payload: { answer, ...state },
+    } = action
 
-    // Extract quiz state from system message
-    const quizStateMatch = messages
-      .map((m) => m.content?.[0]?.text || "")
-      .join("\n")
-      .match(/<QUIZ_STATE>([\s\S]*?)<\/QUIZ_STATE>/)
+    const { 
+      current_question_index,
+      questions,
+      total,
+    } = state
 
-    let quiz_state = quizStateMatch
-      ? JSON.parse(quizStateMatch[1])
-      : null
-
-    if (!quiz_state) {
-      return res.status(400).json({ error: "Missing QUIZ_STATE" })
+    let quiz_state = {
+      ...state,
     }
-
-    const currentQuestionIndex = quiz_state.current_question_index
-    const question = quiz_state.questions[currentQuestionIndex]
 
     switch (type) {
-      case "quiz.submit": {
-        const userAnswer = payload.answer
-        const isCorrect = question.correct_choice_index === userAnswer
-
-        quiz_state.isCorrect = isCorrect
-
-        if (!isCorrect) {
-          question.retry_count = Math.min(
-            question.retry_count + 1,
-            question.hints.length - 1
-          )
-
-          // Disable wrong choice and reset the questions
-          const choices = question.choices.map((choice) => ({
-            ...choice,
-            disabled: choice.value === userAnswer
-          }))
-
-          question.choices = choices
-          const updatedQuestions = quiz_state.questions
-            .map((question, index) => index === currentQuestionIndex ? question : question)
-
-          quiz_state.questions = updatedQuestions
-        }
-
-        quiz_state.showFeedback = true
-        break
-      }
-
-      case "quiz.retry": {
-        quiz_state.showFeedback = true
-        quiz_state.isCorrect = false
-
-        break
-      }
-
-      case "quiz.next": {
+      case "quiz.next": 
         quiz_state.current_question_index += 1
+        quiz_state.current_retry_count = 0
+        quiz_state.disable_choices = false
+        quiz_state.is_correct = false
         quiz_state.showFeedback = false
-
-        if (quiz_state.current_question_index + 1 >= quiz_state.total) {
+        
+        if (quiz_state.current_question_index >= total) {
           quiz_state.completed = true
         }
+        
+        return quiz_state
+      
+      case "quiz.retry": 
+        quiz_state.disable_choices = false
+        quiz_state.current_retry_count += 1
+        
+        return quiz_state
+      
+      case "quiz.submit": 
+        let currentQuestion = questions[current_question_index]
+        const isCorrect = currentQuestion.correct_choice_index === answer
 
-        break
-      }
+        quiz_state.is_correct = isCorrect
+        quiz_state.show_feedback = true
+        quiz_state.disable_choices = true
+
+        if (!isCorrect) {
+          const choices = currentQuestion.choices.map((choice, index) => ({
+            ...choice,
+            disabled: index.toString() === answer,
+          }))
+
+          quiz_state.questions = questions.map((question, index) => ({
+            ...question,
+            choices: index === current_question_index ? choices : question.choices,
+          }))
+        }
+
+        return quiz_state
+      
+      default:
+        return quiz_state
     }
-
-    const content = [
-      {
-        type: "text",
-        text: `<QUIZ_STATE>${JSON.stringify(quiz_state)}</QUIZ_STATE>`
-      }
-    ]
-    return responseHandler(client, {content, messages})(req, res)
   }
 }

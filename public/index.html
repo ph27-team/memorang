@@ -51,12 +51,11 @@
 
         // 2. Initialize ChatKit AFTER the session exists
         const chatkit = document.getElementById('my-chat');
-
+        
         const api = {
           domainKey: "org-WGewayeU0rMuUmbGS53ixdKd",
           url: "http://localhost:3000/api/chat",
           uploadStrategy: {
-            // type: "two_phase",
             type: "direct",
             uploadUrl: "http://localhost:3000/api/chatkit/upload"
           }
@@ -69,7 +68,6 @@
         //     return client_secret
         //   }
         // }
-
 
         chatkit.setOptions({
           api,
