@@ -19,8 +19,7 @@ export const chatHandler = (client) => async (req, res) => {
     item_id,
     thread_id,
   } = params
-  console.log('log event', req.body)
-  console.log('client', client)
+
   const client_secret = req.cookies.chat_id
 
   switch (type) {
@@ -39,9 +38,9 @@ export const chatHandler = (client) => async (req, res) => {
       return res.json(result)
     }
     case "threads.add_user_message": {
-      await createOrUpdateConvo(res, type, input, client_secret, params.thread_id)
+      const convo = await createOrUpdateConvo(res, type, input, client_secret, params.thread_id)
 
-      return
+      return convo
     }
     case "threads.custom_action": {
       const result = handleCustomActions(action)
@@ -49,7 +48,7 @@ export const chatHandler = (client) => async (req, res) => {
         const id = `cti_${customAlphabet(hexadecimalLowercase, 48)()}`
         return id
       }
-
+const responseId = `resp_${customAlphabet(hexadecimalLowercase, 24)()}`;
       const payload = {
         type: "thread.item.done",
         item: {
@@ -58,29 +57,39 @@ export const chatHandler = (client) => async (req, res) => {
           object: "chatkit.thread_item",
           type: "chatkit.widget",
           thread_id,
-          widget: {
+          widget: JSON.stringify({
             name: "Quiz_Widget",
             props: {
               ...result
             }
-          }
+          })
         }
       }
+
       // const payload = {
-      //   type: "thread.item.done",
-      //   item: {
-      //     created_at: new Date().toISOString(),
-      //     id: newId(),
-      //     type: "widget",
-      //     thread_id,
-      //     widget: {
-      //       name: "Quiz_Widget",
-      //       props: {
-      //         ...result
-      //       }
+      //   id: responseId,
+      //   object: "chatkit.response", // Identify this as a response to the action
+      //   status: "completed",
+      //   output: [
+      //     {
+      //       type: "message",
+      //       content: [
+      //         {
+      //           type: "text",
+      //           text: "", // You can leave this empty if you only want the widget
+      //           widget: {
+      //             type: "chatkit.widget",
+      //             schema: result // Assuming handleCustomActions returns the JSX/JSON string
+      //           }
+      //         }
+      //       ]
       //     }
+      //   ],
+      //   // This is vital for syncing the state variables you've been working on
+      //   update_state_variables: {
+      //     ...result.updatedState 
       //   }
-      // }
+      // };
 
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
@@ -88,8 +97,8 @@ export const chatHandler = (client) => async (req, res) => {
 
       res.write(`data: ${JSON.stringify(payload)}\n\n`)
 
-      res.write("data: [DONE]\n\n")
       res.end()
+      return 
     }
   }
 }
@@ -142,7 +151,9 @@ const handleCustomActions = (action) => {
         if (!isCorrect) {
           const choices = currentQuestion.choices.map((choice, index) => ({
             ...choice,
-            disabled: index.toString() === answer,
+            disabled: choice.disabled === false 
+              ? false 
+              : index.toString() === answer,
           }))
 
           quiz_state.questions = questions.map((question, index) => ({

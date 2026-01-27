@@ -38,6 +38,7 @@ export const createOrUpdateConvo = async (res, type, input, client_secret, threa
 
     const nodeStream = Readable.fromWeb(result.body)
     nodeStream.pipe(res)
+    return
   } catch (error) {
     console.error('Error creating thread:', error)
   }
@@ -73,7 +74,6 @@ export const responseHandler = (client, { context = [] }) => async (req, res) =>
 // https://api.openai.com/v1/chatkit/files
 export const fileUploadHandler = (client) => async (req, res) => {
   const client_secret = req.cookies.chat_id
-  console.log('client_secret', client_secret)
 
   try {
     const formData = new FormData();
