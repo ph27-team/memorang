@@ -157,6 +157,7 @@ export const widgetUi = (quiz_state) => {
           : "quiz.retry",
         payload: {
           current_question_index,
+          current_retry_count,
           questions,
         }
       }
