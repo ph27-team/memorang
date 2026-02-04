@@ -19,7 +19,7 @@
         gap: 20px;
         padding: 20px;
       }
-      
+
       openai-chatkit {
         display: block;
         height: 600px;
@@ -35,7 +35,7 @@
     <h1>Quiz Chat</h1>
     <!-- The ChatKit component is a web component -->
     <openai-chatkit id="my-chat"></openai-chatkit>
-    
+
     <script async defer>
       async function initializeChatKit() {
         // 1. Create a ChatKit session
@@ -56,11 +56,15 @@
           domainKey: "org-WGewayeU0rMuUmbGS53ixdKd",
           url: "http://localhost:3000/api/chat",
           uploadStrategy: {
-            // type: "two_phase",
             type: "direct",
             uploadUrl: "http://localhost:3000/api/chatkit/upload"
           }
         }
+
+        const onAction = async (action, item) => {
+
+          console.log("Action received:", action, item);
+        };
 
         // const api = {
         //   async getClientSecret(currentClientSecret) {
@@ -69,7 +73,6 @@
         //     return client_secret
         //   }
         // }
-
 
         chatkit.setOptions({
           api,
@@ -85,7 +88,11 @@
             },
           },
           initialThread: null,
+          widgets: {
+            onAction,
+          }
         })
+        console.log("ChatKit initialized with session.", chatkit.widgets);
       }
 
       initializeChatKit().catch(console.error);

@@ -1,22 +1,19 @@
 import { Readable } from "stream"
-import { toFile } from 'openai'
-// import multer from "multer";
-
-// const upload = multer();
+import { nanoid } from "nanoid"
 
 const baseUrl = 'https://api.openai.com/v1/chatkit/'
 
 export const createOrUpdateConvo = async (res, type, input, client_secret, threadId = null) => {
   try {
-    const { attachments = [], content } = input
+    const { attachments = [], content = [{id: nanoid(), text: ''}] } = input
     let payload = {
       type,
       params: {
         input: {
-            content,
-            quoted_text: "",
-            attachments,
-            inference_options: {}
+          content,
+          quoted_text: "",
+          attachments,
+          inference_options: {},
         }
       }
     }
@@ -34,13 +31,14 @@ export const createOrUpdateConvo = async (res, type, input, client_secret, threa
       body: JSON.stringify(payload)
     })
 
-    
+
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
     const nodeStream = Readable.fromWeb(result.body)
     nodeStream.pipe(res)
+    return
   } catch (error) {
     console.error('Error creating thread:', error)
   }
@@ -53,8 +51,8 @@ export const responseHandler = (client, { context = [] }) => async (req, res) =>
   })
 
   // res.json(response)
-  const outputText = response.output_text 
-      ?? response.output?.[0]?.content?.[0]?.text 
+  const outputText = response.output_text
+      ?? response.output?.[0]?.content?.[0]?.text
       ?? ""
 
   return res.json({
@@ -76,13 +74,12 @@ export const responseHandler = (client, { context = [] }) => async (req, res) =>
 // https://api.openai.com/v1/chatkit/files
 export const fileUploadHandler = (client) => async (req, res) => {
   const client_secret = req.cookies.chat_id
-  console.log('client_secret', client_secret)
 
   try {
     const formData = new FormData();
     formData.append(
       "file",
-      new Blob([req.file.buffer], { type: req.file.mimetype }),
+      new Blob([req.file.buffer], { id: nanoid(), type: req.file.mimetype }),
       req.file.originalname
     );
 
@@ -92,7 +89,7 @@ export const fileUploadHandler = (client) => async (req, res) => {
         "Authorization": `Bearer ${client_secret}`,
       },
       body: formData,
-    })  
+    })
 
     const response = await result.json()
     res.json(response)
