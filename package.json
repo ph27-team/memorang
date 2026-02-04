@@ -20,6 +20,7 @@
     "nanoid-dictionary": "^5.0.0",
     "openai": "^6.16.0",
     "path": "^0.12.7",
+    "readable-stream": "^4.7.0",
     "stream": "^0.0.3",
     "url": "^0.11.4"
   },

@@ -31,7 +31,7 @@ export const createOrUpdateConvo = async (res, type, input, client_secret, threa
       body: JSON.stringify(payload)
     })
 
-    
+
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -51,8 +51,8 @@ export const responseHandler = (client, { context = [] }) => async (req, res) =>
   })
 
   // res.json(response)
-  const outputText = response.output_text 
-      ?? response.output?.[0]?.content?.[0]?.text 
+  const outputText = response.output_text
+      ?? response.output?.[0]?.content?.[0]?.text
       ?? ""
 
   return res.json({
@@ -89,27 +89,12 @@ export const fileUploadHandler = (client) => async (req, res) => {
         "Authorization": `Bearer ${client_secret}`,
       },
       body: formData,
-    })  
+    })
 
     const response = await result.json()
     res.json(response)
   } catch (error) {
     console.error("Upload error:", error)
     res.status(500).json({ error: "Failed to upload to OpenAI" })
-  }
-}
-
-export const stateReducer = (prevState = defaultState, nextState = {}) => {
-/** State object for widget */
-//   current_question_index: z.number().default(0),
-//   total: z.number(),
-//   show_feedback: z.boolean().default(false),
-//   is_correct: z.boolean().default(false),
-//   completed: z.boolean().default(false),
-//   current_retry_count: z.number().default(0),
-
-  return {
-    ...prevState,
-    ...nextState,
   }
 }

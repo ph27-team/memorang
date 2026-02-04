@@ -1,0 +1,182 @@
+{
+    "type": "threads.custom_action",
+    "params": {
+        "item_id": "cti_6973222dffcc81979a0cd87fa40c8fd708758318ac4e68eb",
+        "action": {
+            "type": "quiz.submit",
+            "payload": {
+                "completed": false,
+                "current_question_index": 0,
+                "current_retry_count": 0,
+                "disable_choices": false,
+                "is_correct": false,
+                "questions": [
+                    {
+                        "choices": [
+                            {
+                                "disabled": false,
+                                "label": "Its role in everyday life and academic success.",
+                                "value": "0"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "The history of psychology.",
+                                "value": "1"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "The biological basis of thinking.",
+                                "value": "2"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "Methods of teaching mathematics.",
+                                "value": "3"
+                            }
+                        ],
+                        "correct_choice_index": "0",
+                        "explanation": "The article primarily discusses the importance of metacognition in everyday life as well as in academic success, emphasizing its role in problem-solving and goal-oriented behaviors.",
+                        "hints": [
+                            "Think about the general theme of the article.",
+                            "What skill is being highlighted for success?",
+                            "Is the focus more on practical application or on a theoretical background?"
+                        ],
+                        "question_text": "What is the primary focus of the article regarding metacognition?"
+                    },
+                    {
+                        "choices": [
+                            {
+                                "disabled": false,
+                                "label": "Think about your thinking and regulate it.",
+                                "value": "0"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "Remember more information.",
+                                "value": "1"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "Learn new languages.",
+                                "value": "2"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "Solve mathematical equations faster.",
+                                "value": "3"
+                            }
+                        ],
+                        "correct_choice_index": "0",
+                        "explanation": "Metacognition is described as thinking about your thinking, allowing you to regulate your thought processes, reasoning, and learning strategies.",
+                        "hints": [
+                            "Look for a description of what metacognition allows a person to do.",
+                            "Focus on the cognitive functions involved in metacognition.",
+                            "Is it about memory, regulation, or speed?"
+                        ],
+                        "question_text": "According to the article, what does metacognition enable you to do?"
+                    },
+                    {
+                        "choices": [
+                            {
+                                "disabled": false,
+                                "label": "Does this remind me of anything else I know?",
+                                "value": "0"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "What are the practical applications of this?",
+                                "value": "1"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "Can I explain this simply?",
+                                "value": "2"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "Is this the first time I’ve seen this idea?",
+                                "value": "3"
+                            }
+                        ],
+                        "correct_choice_index": "1",
+                        "explanation": "The list of self-questions focuses on understanding, recalling, and relating information, but 'What are the practical applications of this?' is less emphasized as a metacognitive question during reading in this context.",
+                        "hints": [
+                            "Check the list of questions suggested for metacognitive practice.",
+                            "Focus on questions related to understanding and memory.",
+                            "Identify which question was not part of the list presented in the article."
+                        ],
+                        "question_text": "Which of the following is NOT a suggested self-question for practicing metacognition during reading?"
+                    },
+                    {
+                        "choices": [
+                            {
+                                "disabled": false,
+                                "label": "Using a thought experiment like Apollo 13.",
+                                "value": "0"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "Practicing a new sport.",
+                                "value": "1"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "Cooking a new recipe.",
+                                "value": "2"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "Learning a musical instrument.",
+                                "value": "3"
+                            }
+                        ],
+                        "correct_choice_index": "0",
+                        "explanation": "The article mentions the Apollo 13 story as a story worth telling and an example of how thought experiments can be used to demonstrate metacognitive skills.",
+                        "hints": [
+                            "Look for examples given outside traditional studying.",
+                            "Focus on stories or analogies used to illustrate metacognitive principles.",
+                            "Recall the story related to problem-solving in a crisis."
+                        ],
+                        "question_text": "What is an example of applying metacognition outside of studying or academic contexts, as discussed in the article?"
+                    },
+                    {
+                        "choices": [
+                            {
+                                "disabled": false,
+                                "label": "It helps in quality-control of thinking, reasoning, and decision-making.",
+                                "value": "0"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "It allows faster memorization of facts.",
+                                "value": "1"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "It ensures that you never make mistakes.",
+                                "value": "2"
+                            },
+                            {
+                                "disabled": false,
+                                "label": "It automatically improves IQ.",
+                                "value": "3"
+                            }
+                        ],
+                        "correct_choice_index": "0",
+                        "explanation": "The article emphasizes that metacognition helps in 'quality-control' of thinking, reasoning, and decision-making, which is crucial for effective problem-solving and learning.",
+                        "hints": [
+                            "Think about the benefits mentioned in the conclusion.",
+                            "What does the article say about the control marketers or learners have because of metacognition?",
+                            "Consider the overall advantage that the article highlights."
+                        ],
+                        "question_text": "What is a key benefit of employing metacognition, according to the article?"
+                    }
+                ],
+                "show_feedback": false,
+                "total": 5,
+                "answer": "1"
+            }
+        },
+        "thread_id": "cthr_69732220292c819794dc1ce94303981f08758318ac4e68eb"
+    }
+}

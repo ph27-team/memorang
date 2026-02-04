@@ -3,23 +3,25 @@ import { Readable } from "stream"
 import { customAlphabet } from 'nanoid';
 import { hexadecimalLowercase } from 'nanoid-dictionary';
 
-import { createOrUpdateConvo, responseHandler, stateReducer } from './libs.js'
+import { createOrUpdateConvo, responseHandler } from './libs.js'
+import { widgetUi } from "./widget.js"
 
 dotenv.config()
 const { ORG_ID } = process.env
 
 export const chatHandler = (client) => async (req, res) => {
-  const { 
-    params, 
+  const {
+    params,
     type,
   } = req.body
-  const { 
-    action, 
-    input, 
+  const {
+    action,
+    input,
     item_id,
     thread_id,
   } = params
 
+  console.log("ChatKit action received:", type, params);
   const client_secret = req.cookies.chat_id
 
   switch (type) {
@@ -29,7 +31,7 @@ export const chatHandler = (client) => async (req, res) => {
       return convo
     }
     case "threads.list": {
-      const threads = await client.beta.chatkit.threads.list({ 
+      const threads = await client.beta.chatkit.threads.list({
         user: ORG_ID,
         limit: 100
       })
@@ -43,117 +45,111 @@ export const chatHandler = (client) => async (req, res) => {
       return convo
     }
     case "threads.custom_action": {
-      const result = handleCustomActions(action)
+      const widget = handleCustomActions(action)
       const newId = () => {
         const id = `cti_${customAlphabet(hexadecimalLowercase, 48)()}`
         return id
       }
-const responseId = `resp_${customAlphabet(hexadecimalLowercase, 24)()}`;
-      const payload = {
-        type: "thread.item.done",
-        item: {
-          created_at: new Date().toISOString(),
-          id: newId(),
-          object: "chatkit.thread_item",
-          type: "chatkit.widget",
-          thread_id,
-          widget: JSON.stringify({
-            name: "Quiz_Widget",
-            props: {
-              ...result
-            }
-          })
-        }
-      }
-
-      // const payload = {
-      //   id: responseId,
-      //   object: "chatkit.response", // Identify this as a response to the action
-      //   status: "completed",
-      //   output: [
-      //     {
-      //       type: "message",
-      //       content: [
-      //         {
-      //           type: "text",
-      //           text: "", // You can leave this empty if you only want the widget
-      //           widget: {
-      //             type: "chatkit.widget",
-      //             schema: result // Assuming handleCustomActions returns the JSX/JSON string
-      //           }
-      //         }
-      //       ]
-      //     }
-      //   ],
-      //   // This is vital for syncing the state variables you've been working on
-      //   update_state_variables: {
-      //     ...result.updatedState 
-      //   }
-      // };
 
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
+      const payload = {
+        type: "thread.item.done",
+        item: {
+          created_at: new Date().toISOString(),
+          id: item_id ?? newId(),
+          object: "chatkit.thread_item",
+          type: "widget",
+          thread_id,
+          widget,
+        }
+      }
+
       res.write(`data: ${JSON.stringify(payload)}\n\n`)
 
-      res.end()
-      return 
+      res.write(`data: ${JSON.stringify({
+        type: "thread.item.end_of_turn",
+        item: {
+          id: newId(),
+          object: "chatkit.thread_item",
+          type: "end_of_turn",
+          thread_id,
+          created_at: new Date().toISOString()
+        }
+      })}\n\n`)
+
+
+      res.flush?.()
+      setTimeout(() => {
+        res.end()
+      }, 1000)
+      return
     }
   }
 }
 
 const handleCustomActions = (action) => {
   if (action) {
-    const { 
-      type, 
+    const {
+      type,
       payload: { answer, ...state },
     } = action
 
-    const { 
+    const {
       current_question_index,
+      current_retry_count,
       questions,
-      total,
+      show_feedback,
     } = state
 
     let quiz_state = {
-      ...state,
+      current_question_index,
+      current_retry_count,
+      questions,
+      show_feedback,
     }
 
     switch (type) {
-      case "quiz.next": 
+      case "quiz.finish":
+        quiz_state.completed = true
+
+        return widgetUi(quiz_state)
+
+      case "quiz.next":
         quiz_state.current_question_index += 1
         quiz_state.current_retry_count = 0
         quiz_state.disable_choices = false
         quiz_state.is_correct = false
-        quiz_state.showFeedback = false
-        
-        if (quiz_state.current_question_index >= total) {
-          quiz_state.completed = true
-        }
-        
-        return quiz_state
-      
-      case "quiz.retry": 
+        quiz_state.show_feedback = false
+        quiz_state.show_submit_button = true
+
+        return widgetUi(quiz_state)
+
+      case "quiz.retry":
         quiz_state.disable_choices = false
-        quiz_state.current_retry_count += 1
-        
-        return quiz_state
-      
-      case "quiz.submit": 
+        quiz_state.is_correct = false
+        quiz_state.show_feedback = true
+        quiz_state.show_submit_button = true
+
+        return widgetUi(quiz_state)
+
+      case "quiz.submit":
         let currentQuestion = questions[current_question_index]
         const isCorrect = currentQuestion.correct_choice_index === answer
 
+        quiz_state.disable_choices = true
         quiz_state.is_correct = isCorrect
         quiz_state.show_feedback = true
-        quiz_state.disable_choices = true
+        quiz_state.show_submit_button = false
 
         if (!isCorrect) {
+          quiz_state.current_retry_count += 1
+
           const choices = currentQuestion.choices.map((choice, index) => ({
             ...choice,
-            disabled: choice.disabled === false 
-              ? false 
-              : index.toString() === answer,
+            disabled: !!choice.disabled || index.toString() == answer,
           }))
 
           quiz_state.questions = questions.map((question, index) => ({
@@ -162,10 +158,11 @@ const handleCustomActions = (action) => {
           }))
         }
 
-        return quiz_state
-      
+        return widgetUi(quiz_state)
+
       default:
-        return quiz_state
+
+        return widgetUi(quiz_state)
     }
   }
 }
