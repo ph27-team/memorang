@@ -53,7 +53,7 @@
         const chatkit = document.getElementById('my-chat');
 
         const api = {
-          domainKey: "org-WGewayeU0rMuUmbGS53ixdKd",
+          domainKey: "domain_pk_695f4155a15481909bf1fa6c01d183ad005568a4dd12b6f0",
           url: "/api/chat",
           uploadStrategy: {
             type: "direct",
@@ -65,14 +65,6 @@
 
           console.log("Action received:", action, item);
         };
-
-        // const api = {
-        //   async getClientSecret(currentClientSecret) {
-        //     const res = await fetch('/api/chatkit/session', { method: 'POST' })
-        //     const {client_secret} = await res.json();
-        //     return client_secret
-        //   }
-        // }
 
         chatkit.setOptions({
           api,
