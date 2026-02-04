@@ -47,7 +47,6 @@ app.post('/api/chatkit/session', async (req, res) => {
           max_file_size: 5, // 5MB
         },
       },
-
     })
 
     const client_secret = session.client_secret
@@ -63,5 +62,5 @@ app.post('/api/chatkit/session', async (req, res) => {
 app.post('/api/chat', chatHandler(openai))
 
 app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`)
+  console.log(`Server listening at ${port}`)
 })
