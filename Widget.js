@@ -1,13 +1,15 @@
 <Card size="md">
   <Col gap={2}>
     <Row>
-      <Caption value={`Question ${current_question_index + 1} of ${total}`} />
+      <Caption key="progress_text" value={`Question ${current_question_index + 1} of ${questions.length}`} />
       <Spacer />
+      <Caption key="percent_text" value={`${((current_question_index + 1) / questions.length) * 100}%`} color="tertiary" />
     </Row>
     <Box height={8} background="alpha-10" radius="full" padding={0}>
       <Box
         height="100%"
-        width={`${((current_question_index + 1) / total) * 100}%`}
+        key="percent_bar"
+        width={`${((current_question_index + 1) / questions.length) * 100}%`}
         background="blue"
         radius="full"
       />
@@ -36,29 +38,27 @@
       onSubmitAction={{
         type: "quiz.submit",
         payload: {
-          completed,
           current_question_index,
           current_retry_count,
-          disable_choices,
-          is_correct,
           questions,
-          show_feedback,
-          total,
         },
       }}
     >
       <Col gap={3}>
         {/* Dynamically pull the question based on the state index */}
         <Title
+          key="question_title"
           value={questions[current_question_index].question_text}
           size="md"
         />
 
         <RadioGroup
+          key="choices"
           name="answer"
           options={questions[current_question_index].choices}
           direction="col"
           disabled={disable_choices}
+          defaultValue='-1'
           required={true}
         />
 
@@ -88,6 +88,7 @@
 
               {is_correct ? (
                 <Text
+                  key="explanation"
                   value={questions[current_question_index].explanation}
                   size="sm"
                   color="secondary"
@@ -97,7 +98,7 @@
                   .slice(0, current_retry_count)
                   .map((hint, index) => (
                     <Row gap={2} key={index}>
-                      <Text value={hint} size="sm" color="secondary" />
+                      <Text key={`hint_${index}`} value={hint} size="sm" color="secondary" />
                     </Row>
                   ))
               )}
@@ -105,42 +106,31 @@
 
             <Row>
               <Spacer />
-              {is_correct ? (
-                <Button
-                  label={questions.length == total ? "Finish" : "Next question"}
-                  onClickAction={{
-                    type: "quiz.next",
-                    payload: {
-                      completed,
-                      current_question_index,
-                      current_retry_count,
-                      disable_choices,
-                      is_correct,
-                      questions,
-                      show_feedback,
-                      total,
-                    },
-                  }}
-                />
-              ) : (
-                <Button
-                  label="Retry"
-                  variant="outline"
-                  onClickAction={{
-                    type: "quiz.retry",
-                    payload: {
-                      completed,
-                      current_question_index,
-                      current_retry_count,
-                      disable_choices,
-                      is_correct,
-                      questions,
-                      show_feedback,
-                      total,
-                    },
-                  }}
-                />
-              )}
+              {show_submit_button ? <Button submit label="Submit Answer" style="primary" />
+                : is_correct ? (
+                  <Button
+                      label={(current_question_index + 1) === questions.length ? "Finish" : "Next question"}
+                    onClickAction={{
+                      type: (current_question_index + 1) === questions.length ? "quiz.finish" : "quiz.next",
+                      payload: {
+                        current_question_index,
+                        questions,
+                      },
+                    }}
+                  />
+                ) : (
+                  <Button
+                    label="Retry"
+                    variant="outline"
+                    onClickAction={{
+                      type: "quiz.retry",
+                      payload: {
+                        questions,
+                      },
+                    }}
+                  />
+                )
+              }
             </Row>
           </Col>
         ) : (
