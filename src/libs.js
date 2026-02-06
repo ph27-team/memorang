@@ -44,33 +44,6 @@ export const createOrUpdateConvo = async (res, type, input, client_secret, threa
   }
 }
 
-export const responseHandler = (client, { context = [] }) => async (req, res) => {
-  const response = await client.responses.create({
-    model: "gpt-4.1-nano",
-    input: context,
-  })
-
-  // res.json(response)
-  const outputText = response.output_text
-      ?? response.output?.[0]?.content?.[0]?.text
-      ?? ""
-
-  return res.json({
-    type: "messages.create",
-    result: {
-      object: "chatkit.thread_item",
-      type: "chatkit.assistant_message",
-      thread_id: req.body.params?.thread_id,
-      content: [
-        {
-          type: "output_text",
-          text: outputText,
-        },
-      ],
-    },
-  })
-}
-
 // https://api.openai.com/v1/chatkit/files
 export const fileUploadHandler = (client) => async (req, res) => {
   const client_secret = req.cookies.chat_id

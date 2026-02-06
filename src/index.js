@@ -27,12 +27,6 @@ const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
 app.use(express.static(path.join(__dirname, '../public')))
 
 const upload = multer({ storage: multer.memoryStorage() })
-// const upload = multer()
-
-// New endpoint for 'direct' upload strategy
-app.post('/api/chatkit/upload', upload.single('file'), async (req, res) => {
-  fileUploadHandler(openai)(req, res)
-})
 
 // Endpoint to create a ChatKit session and return a client secret
 app.post('/api/chatkit/session', async (req, res) => {
@@ -57,6 +51,11 @@ app.post('/api/chatkit/session', async (req, res) => {
     console.error('Error creating ChatKit session:', error)
     res.status(500).json({ error: 'Internal Server Error' })
   }
+})
+
+// New endpoint for 'direct' upload strategy
+app.post('/api/chatkit/upload', upload.single('file'), async (req, res) => {
+  fileUploadHandler(openai)(req, res)
 })
 
 app.post('/api/chat', chatHandler(openai))

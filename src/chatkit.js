@@ -1,9 +1,8 @@
 import dotenv from 'dotenv'
-import { Readable } from "stream"
 import { customAlphabet } from 'nanoid';
 import { hexadecimalLowercase } from 'nanoid-dictionary';
 
-import { createOrUpdateConvo, responseHandler } from './libs.js'
+import { createOrUpdateConvo } from './libs.js'
 import { widgetUi } from "./widget.js"
 
 dotenv.config()
